@@ -154,7 +154,7 @@ Server::Server(int port, bool master, int options, int maxPayload, SSLContext ss
         int on = 1;
         setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
-        if (bind(listenFd, (sockaddr *) &listenAddr, sizeof(sockaddr_in)) || listen(listenFd, 10)) {
+        if (bind(listenFd, (sockaddr *) &listenAddr, sizeof(sockaddr_in)) || listen(listenFd, 128)) {
             throw ERR_LISTEN;
         }
 
@@ -308,7 +308,7 @@ SSLContext::SSLContext(std::string certFileName, std::string keyFileName)
         throw ERR_SSL;
     }
 
-    if (SSL_CTX_use_certificate_file(sslContext, certFileName.c_str(), SSL_FILETYPE_PEM) < 0) {
+    if (SSL_CTX_use_certificate_chain_file(sslContext, certFileName.c_str()) < 0) {
         throw ERR_SSL;
     } else if (SSL_CTX_use_PrivateKey_file(sslContext, keyFileName.c_str(), SSL_FILETYPE_PEM) < 0) {
         throw ERR_SSL;
@@ -333,6 +333,7 @@ void *SSLContext::newSSL(int fd)
     SSL *ssl = SSL_new(sslContext);
     SSL_set_fd(ssl, fd);
     SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_set_mode(ssl, SSL_MODE_RELEASE_BUFFERS);
     return ssl;
 }
 
